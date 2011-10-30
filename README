@@ -1,0 +1,9 @@
+libx10: The X-10 protocol implementation in C
+
+The X-10 is an industry standard used for home automation. It uses the power
+line to transmit signal among electrical devices, thus no additional wiring
+is required. Although its limitation on bandwidth and available addresses,
+it's still quite common in home automation area.
+
+The library implements part of the protocol, and uses the CM11A computer
+interface module to transmit signals.
