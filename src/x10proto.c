@@ -23,7 +23,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/select.h>
-#include "x10proto.h"
+#include <x10/x10proto.h>
 #include "debug.h"
 
 int wait_for_ack(int fd, unsigned char value)

@@ -22,8 +22,8 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
-#include "x10proto.h"
-#include "cm11.h"
+#include <x10/x10proto.h>
+#include <x10/cm11.h>
 
 typedef void (*sighandler_t)(int);
 sighandler_t old_handler;

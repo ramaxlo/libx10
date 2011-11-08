@@ -19,7 +19,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "x10proto.h"
+#include <x10/x10proto.h>
 
 u8 codes[] = {
 	0x06, 0x0e, 0x02, 0x0a, 

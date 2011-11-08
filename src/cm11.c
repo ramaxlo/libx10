@@ -26,8 +26,8 @@
 #include <sys/select.h>
 #include <fcntl.h>
 #include <time.h>
-#include "x10proto.h"
-#include "cm11.h"
+#include <x10/x10proto.h>
+#include <x10/cm11.h>
 #include "debug.h"
 
 static int serial_init(cm11_handle *handle, s8 *device)
