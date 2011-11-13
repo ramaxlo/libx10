@@ -88,8 +88,22 @@ int x10_read(int fd, struct read_buf *buf)
 		trash = buf->sz - 9;
 		buf->sz = 9;
 	}
-	if(buf->sz != 0)
-		read(fd, &buf->mask, buf->sz);
+	if(buf->sz != 0) {
+		int tmp2 = buf->sz;
+		int total = 0;
+		int rc;
+
+		while (tmp2 > 0) {
+			rc = read(fd, (&buf->mask) + total, tmp2);
+			if (rc < 0) {
+				ERROR("Read error");
+				return -1;
+			}
+
+			total += rc;
+			tmp2 -= rc;
+		}
+	}
 
 	/* Drop remaining bytes */
 	while(trash)
@@ -116,20 +130,28 @@ unsigned char fun, unsigned char value)
 	unsigned char cmd[2];	
 	unsigned char ack;
 	unsigned char checksum;
+	int retry = 5;
 
 	cmd[0] = MODE_ADDR;
 	cmd[1] = ((codes[house] << 4) | codes[dev]);
 	checksum = (cmd[0] + cmd[1]) & 0xff;
 
 	DBG("cmd: 0x%02x, 0x%02x\n", cmd[0], cmd[1]);
-	write(fd, cmd, 2);
 
-	if(wait_for_ack(fd, checksum))
+	while (retry--)
+       	{
+		write(fd, cmd, 2);
+
+		if(!wait_for_ack(fd, checksum))
+			break;
+		DBG("Retry ...\n");
+	}
+	if (retry <= 0)
 	{
 		ERROR("Checksum error");	
 		return -1;
 	}
-	
+
 	ack = 0;
 	write(fd, &ack, 1);
 
@@ -145,10 +167,18 @@ unsigned char fun, unsigned char value)
 	cmd[1] = ((codes[house] << 4) | fun);
 	checksum = (cmd[0] + cmd[1]) & 0xff;
 
+	retry = 5;
 	DBG("cmd: 0x%02x, 0x%02x\n", cmd[0], cmd[1]);
-	write(fd, cmd, 2);
 
-	if(wait_for_ack(fd, checksum))
+	while (retry--)
+	{
+		write(fd, cmd, 2);
+
+		if(!wait_for_ack(fd, checksum))
+			break;
+		DBG("Retry ...\n");
+	}
+	if (retry <= 0)
 	{
 		ERROR("Checksum error");	
 		return -1;

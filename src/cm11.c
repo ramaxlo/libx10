@@ -534,18 +534,28 @@ int cm11_ifce_status(cm11_handle *handle, cm11_status *status)
 	int fd = handle->fd;
 	u8 cmd;
 	int rc;
+	int sz = sizeof(cm11_status);
+	int total = 0;
 
 	cmd = CM11_STATUS_REQ;
 	write(fd, &cmd, 1);
 
-	rc = read(fd, status, sizeof(cm11_status));
-	if(rc < 0)
+	while (sz > 0)
 	{
-		ERROR("Something wrong\n");
-		rc = -1;
-		goto out;
+		rc = read(fd, (char *)status + total, sz);
+		if(rc < 0)
+		{
+			ERROR("Something wrong\n");
+			rc = -1;
+			goto out;
+		}
+
+		sz -= rc;
+		total += rc;
 	}
 
+	DBG("hours: 0x%x\n", status->hours);
+	DBG("daymask: 0x%x\n", status->daymask);
 	DBG("house: 0x%x\n", status->house);
 	DBG("Firmware version: %d\n", status->revision);
 	DBG("Monitored device: 0x%x\n", status->cur_device);
