@@ -91,7 +91,7 @@ int cm11_clock_init(cm11_handle *handle)
 		rc = -1;
 		goto out;
 	}
-	else if(code = 0x5a)
+	else if(code == 0x5a)
 	{
 		cm11_eat_trash(handle);
 		rc = 0;
@@ -159,7 +159,7 @@ void cm11_close(cm11_handle *handle)
 
 int cm11_set_clock(cm11_handle *handle)
 {
-	int rc = 0;
+	int rc;
 	time_t tv;
 	struct tm *tm;
 	cm11_clock clk;
@@ -181,7 +181,12 @@ int cm11_set_clock(cm11_handle *handle)
 	for(i = 1; i < sizeof(clk); i++)
 		checksum += ((unsigned char *)&clk)[i];
 
-	write(handle->fd, &clk, sizeof(clk));
+	rc = write(handle->fd, &clk, sizeof(clk));
+	if (rc < 0)
+	{
+		ERROR("Write error");
+		goto out;
+	}
 
 	if(wait_for_ack(handle->fd, checksum))
 	{
@@ -191,7 +196,12 @@ int cm11_set_clock(cm11_handle *handle)
 	}
 
 	i = 0;
-	write(handle->fd, &i, 1);
+	rc = write(handle->fd, &i, 1);
+	if (rc < 0)
+	{
+		ERROR("Write error");
+		goto out;
+	}
 
 	if(wait_for_ack(handle->fd, 0x55))
 	{
@@ -201,6 +211,7 @@ int cm11_set_clock(cm11_handle *handle)
 	}
 
 	INFO("Set clock done\n");
+	rc = 0;
 out:
 	return rc;
 }
@@ -480,10 +491,11 @@ static void __parse_update(cm11_handle *handle, int dev, struct read_buf *buf, c
 
 	while(mask)
 	{
+		u8 h = 0, d = 0, shift;
+		u8 func, value;
+
 		switch(mask & 0x01)
 		{
-			u8 h, d, shift;
-			u8 func, value;
 			case 0:
 				parse_addr(*p, &h, &d);
 				ptrs[idx] = &STATE(handle, h, d);
@@ -598,7 +610,12 @@ int cm11_ifce_status(cm11_handle *handle, cm11_status *status)
 	int total = 0;
 
 	cmd = CM11_STATUS_REQ;
-	write(fd, &cmd, 1);
+	rc = write(fd, &cmd, 1);
+	if (rc < 0)
+	{
+		ERROR("Write error");
+		return -1;
+	}
 
 	while (sz > 0)
 	{

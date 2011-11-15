@@ -29,8 +29,15 @@
 int wait_for_ack(int fd, unsigned char value)
 {
 	unsigned char ack;
+	int rc;
 
-	read(fd, &ack, 1);
+	rc = read(fd, &ack, 1);
+	if (rc < 0)
+	{
+		ERROR("Read error");
+		return -1;
+	}
+
 	if(ack != value)
 	{
 		ERROR("Need: 0x%x Read: 0x%x\n", value, ack);
@@ -54,7 +61,7 @@ int x10_detect_poll(int fd, u8 *code)
 
 	rc = select(fd + 1, &rset, NULL, NULL, &tv);
 	if(rc > 0)
-		read(fd, code, 1);
+		rc = read(fd, code, 1);
 
 	return rc;
 }
@@ -86,9 +93,20 @@ int x10_read(int fd, struct read_buf *buf)
 	}
 
 	tmp = SIG_ACK;
-	write(fd, &tmp, 1);
+	rc = write(fd, &tmp, 1);
+	if (rc < 0)
+	{
+		ERROR("Write error");
+		return -1;
+	}
 
-	read(fd, &buf->sz, 1);
+	rc = read(fd, &buf->sz, 1);
+	if (rc < 0)
+	{
+		ERROR("Read error");
+		return -1;
+	}
+
 	if(buf->sz > 9)
 	{
 		trash = buf->sz - 9;
@@ -114,7 +132,7 @@ int x10_read(int fd, struct read_buf *buf)
 	/* Drop remaining bytes */
 	while(trash)
 	{
-		read(fd, (char *)&i, 1);
+		rc = read(fd, (char *)&i, 1);
 		trash--;
 	}
 
@@ -137,6 +155,7 @@ unsigned char fun, unsigned char value)
 	unsigned char ack;
 	unsigned char checksum;
 	int retry = 5;
+	int rc;
 
 	cmd[0] = MODE_ADDR;
 	cmd[1] = ((codes[house] << 4) | codes[dev]);
@@ -146,7 +165,9 @@ unsigned char fun, unsigned char value)
 
 	while (retry--)
        	{
-		write(fd, cmd, 2);
+		rc = write(fd, cmd, 2);
+		if (rc < 0)
+			continue;
 
 		if(!wait_for_ack(fd, checksum))
 			break;
@@ -159,7 +180,12 @@ unsigned char fun, unsigned char value)
 	}
 
 	ack = 0;
-	write(fd, &ack, 1);
+	rc = write(fd, &ack, 1);
+	if (rc < 0)
+	{
+		ERROR("Write error");
+		return -1;
+	}
 
 	if(wait_for_ack(fd, 0x55))
 	{
@@ -178,7 +204,9 @@ unsigned char fun, unsigned char value)
 
 	while (retry--)
 	{
-		write(fd, cmd, 2);
+		rc = write(fd, cmd, 2);
+		if (rc < 0)
+			continue;
 
 		if(!wait_for_ack(fd, checksum))
 			break;
@@ -191,7 +219,12 @@ unsigned char fun, unsigned char value)
 	}
 
 	ack = 0;
-	write(fd, &ack, 1);
+	rc = write(fd, &ack, 1);
+	if (rc < 0)
+	{
+		ERROR("Write error");
+		return -1;
+	}
 
 	if(wait_for_ack(fd, 0x55))
 	{
