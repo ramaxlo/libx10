@@ -21,7 +21,9 @@
 
 #ifndef  DEBUG_H
 #define  DEBUG_H
+#ifdef HAVE_CONFIG_H
 #include <config.h>
+#endif
 
 #ifdef DEBUG
 #define DBG(x, ...)		printf("%s:%d: " x, __FUNCTION__, __LINE__, ## __VA_ARGS__)
