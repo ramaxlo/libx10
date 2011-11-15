@@ -30,12 +30,12 @@
 typedef void (*sighandler_t)(int);
 sighandler_t old_handler;
 cm11_handle *handle;
+int stop = 0;
 
 void sig_handler(int num)
 {
-	cm11_close(handle);
-	signal(SIGINT, old_handler);
-	exit(0);
+	stop = 1;
+	printf("Exit...\n");
 }
 
 char get_house(s32 house)
@@ -141,7 +141,7 @@ int main()
 
 	old_handler = signal(SIGINT, sig_handler);
 
-	while(1)
+	while(!stop)
 		cm11_receive_notify(handle, notify);
 
 	cm11_close(handle);
