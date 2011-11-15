@@ -66,6 +66,13 @@ static int serial_init(cm11_handle *handle, s8 *device)
 	return 0;
 }
 
+void cm11_eat_trash(cm11_handle *handle)
+{
+	struct read_buf buf;
+
+	x10_read(handle->fd, &buf);
+}
+
 int cm11_clock_init(cm11_handle *handle)
 {
 	int rc;
@@ -82,6 +89,12 @@ int cm11_clock_init(cm11_handle *handle)
 	{
 		ERROR("Something wrong\n");
 		rc = -1;
+		goto out;
+	}
+	else if(code = 0x5a)
+	{
+		cm11_eat_trash(handle);
+		rc = 0;
 		goto out;
 	}
 	else if(code != 0xa5)
@@ -316,11 +329,50 @@ static inline int parse_addr(u8 addr, u8 *house, u8 *dev)
 	return 0;	
 }
 
-static inline int parse_func(u8 code, u8 *func)
+static int parse_func(u8 **buf, u8 *func, u8 *value)
 {
-	*func = (code & 0x0f);
+	int shift = 1;
+	*func = (**buf & 0x0f);
+	*value = 0;
 
-	return 0;	
+	switch(*func)
+	{
+		case FUN_DIM:
+			*value = *(*buf + 1);
+			(*buf) += 2;
+			shift = 2;
+			break;
+		case FUN_BRIGHT:
+			*value = *(*buf + 1);
+			(*buf) += 2;
+			shift = 2;
+			break;	
+		case FUN_STAT_ON:
+			(*buf)++;
+			break;
+		case FUN_STAT_OFF:
+			(*buf)++;
+			break;
+		case FUN_ON:
+			(*buf)++;
+			break;
+		case FUN_OFF:
+			(*buf)++;
+			break;
+		case FUN_ALL_LIGHT_ON:
+			(*buf)++;
+			break;
+		case FUN_ALL_LIGHT_OFF:
+			(*buf)++;
+			break;
+		case FUN_ALL_OFF:
+			(*buf)++;
+			break;
+		default:
+			break;
+	}
+
+	return shift;
 }
 
 static void __update_state2(u32 **p, int n, u32 mask, u32 value)
@@ -372,51 +424,39 @@ static void __update_brightness(u32 **p, int n, int value)
 	}
 }
 
-static int __update_state(u32 **p, int n, u8 **buf)
+static int __update_state(u32 **p, int n, u8 func, u8 value)
 {
-	u8 func;
-	int shift = 1;
-	parse_func(**buf, &func);
-
 	switch(func)
 	{
 		u32 tmp;
 		case FUN_DIM:
-			tmp = *(*buf + 1) * 22 / 210;
+			tmp = value * 22 / 210;
 			__update_brightness(p, n, -tmp);
-			(*buf) += 2;
-			shift = 2;
 			break;
 		case FUN_BRIGHT:
-			tmp = *(*buf + 1) * 22 / 210;
+			tmp = value * 22 / 210;
 			__update_brightness(p, n, tmp);
-			(*buf) += 2;
-			shift = 2;
 			break;	
 		case FUN_STAT_ON:
 			__update_state2(p, n, ON_MASK, ON_VALUE(1));
-			(*buf)++;
 			break;
 		case FUN_STAT_OFF:
 			__update_state2(p, n, ON_MASK, ON_VALUE(0));
-			(*buf)++;
 			break;
 		case FUN_ON:
 			__update_state2(p, n, ON_MASK, ON_VALUE(1));
-			(*buf)++;
 			break;
 		case FUN_OFF:
 			__update_state2(p, n, ON_MASK, ON_VALUE(0));
-			(*buf)++;
 			break;
 		default:
 			break;
 	}
 
-	return shift;
+	return 0;
 }
 
-static void __parse_update(cm11_handle *handle, int dev, struct read_buf *buf)
+static void __parse_update(cm11_handle *handle, int dev, struct read_buf *buf, cm11_notify notify_fxn)
 {
 	u32 mask;
 	u32 *ptrs[16] = {NULL};
@@ -443,6 +483,7 @@ static void __parse_update(cm11_handle *handle, int dev, struct read_buf *buf)
 		switch(mask & 0x01)
 		{
 			u8 h, d, shift;
+			u8 func, value;
 			case 0:
 				parse_addr(*p, &h, &d);
 				ptrs[idx] = &STATE(handle, h, d);
@@ -459,7 +500,9 @@ static void __parse_update(cm11_handle *handle, int dev, struct read_buf *buf)
 				 */
 				if(idx < 1 && handle->device != DEV_NONE)
 				{
-					ptrs[idx] = &STATE(handle, handle->house, handle->device);
+					h = handle->house;
+					d = handle->device;
+					ptrs[idx] = &STATE(handle, h, d);
 					idx++;
 				}
 
@@ -467,9 +510,12 @@ static void __parse_update(cm11_handle *handle, int dev, struct read_buf *buf)
 				 * We need to skip corresponding mask bits of
 				 * processed data bytes.
 				 */
-				shift = __update_state(ptrs, idx, &p);
+				shift = parse_func(&p, &func, &value);
+				__update_state(ptrs, idx, func, value);
 				mask >>= shift;
 				DBG("shift %d\n", shift);
+				if(notify_fxn)
+					notify_fxn(handle, h, d, func, value);
 				break;
 			default:
 				ERROR("bug");
@@ -477,6 +523,20 @@ static void __parse_update(cm11_handle *handle, int dev, struct read_buf *buf)
 		}
 
 	}
+}
+
+int cm11_receive_notify(cm11_handle *handle, cm11_notify notify_fxn)
+{
+	struct read_buf buf;
+	int fd = handle->fd;
+	int rc = 0;
+
+	if((rc = x10_read(fd, &buf)))
+		goto out;
+	__parse_update(handle, DEV_NONE, &buf, notify_fxn);
+
+out:
+	return rc;
 }
 
 int cm11_receive_cmd(cm11_handle *handle)
@@ -487,7 +547,7 @@ int cm11_receive_cmd(cm11_handle *handle)
 
 	if((rc = x10_read(fd, &buf)))
 		goto out;
-	__parse_update(handle, DEV_NONE, &buf);
+	__parse_update(handle, DEV_NONE, &buf, NULL);
 
 out:
 	return rc;
@@ -508,7 +568,7 @@ int cm11_update_status(cm11_handle *handle, int dev)
 	x10_read(fd, &buf);
 
 	handle->device = dev;
-	__parse_update(handle, dev, &buf);
+	__parse_update(handle, dev, &buf, NULL);
 
 	return 0;
 }

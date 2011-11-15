@@ -65,14 +65,20 @@ int x10_read(int fd, struct read_buf *buf)
 	unsigned char *p;
 	int i;
 	int trash = 0;
+	int rc;
 
 	bzero(buf, sizeof(struct read_buf));
 	DBG("Now reading cmd...\n");
-	if(x10_detect_poll(fd, &tmp) <= 0)
+	rc = x10_detect_poll(fd, &tmp);
+	if(rc < 0)
 	{
-		ERROR("Poll timedout");
+		ERROR("Poll error");
 		return -1;
 	}
+	else if(rc == 0)
+		/* Poll timeout, and nothing to read */
+		return -1;
+
 	if(tmp != SIG_POLL)
 	{
 		ERROR("Not poll code: 0x%x", tmp);

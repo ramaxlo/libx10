@@ -81,6 +81,8 @@ typedef struct cm11_status
 	u16 cur_dim;
 } cm11_status;
 
+typedef void (*cm11_notify)(cm11_handle *handle, s32 house, s32 device, u8 func, u8 value);
+
 cm11_handle *cm11_init(s8 *device);
 void cm11_close(cm11_handle *handle);
 int cm11_set_clock(cm11_handle *handle);
@@ -93,6 +95,7 @@ int cm11_set_device_type(cm11_handle *handle, int id, int type);
 int cm11_ifce_status(cm11_handle *handle, cm11_status *status);
 int cm11_set_device_dir(struct cm11_handle *handle, int dev, int two_way);
 int cm11_receive_cmd(cm11_handle *handle);
+int cm11_receive_notify(cm11_handle *handle, cm11_notify notify_fxn);
 
 #endif   // CM11_H
 
