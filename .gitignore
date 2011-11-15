@@ -1,0 +1,9 @@
+missing
+autom4te.cache
+aclocal.m4
+depcomp
+install-sh
+configure
+cscope.*
+*.in
+*~
