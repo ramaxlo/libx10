@@ -553,7 +553,7 @@ out:
 	return rc;
 }
 
-int cm11_update_status(cm11_handle *handle, int dev)
+static int __update_status(cm11_handle *handle, int dev)
 {
 	struct read_buf buf;
 	int fd = handle->fd;
@@ -577,7 +577,7 @@ int cm11_get_status(cm11_handle *handle, int dev, u32 *status)
 {
 	if(BIDIR(STATE(handle, handle->house, dev)))
 	{
-		if(cm11_update_status(handle, dev))
+		if(__update_status(handle, dev))
 		{
 			printf("Status update failed\n");	
 			return -1;
