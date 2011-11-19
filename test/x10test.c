@@ -46,7 +46,6 @@ void sig_handler(int num)
 
 int main()
 {
-	//struct read_buf buf;
 	u32 status;
 	//cm11_status stat;
 
@@ -77,7 +76,7 @@ int main()
 	cm11_set_device_dir(handle, DEV_2, 0);
 
 	while(1)
-		cm11_receive_cmd(handle);
+		cm11_receive(handle);
 //	cm11_device_on(handle, DEV_2);
 //	sleep(10);
 //	cm11_device_off(handle, DEV_2);
@@ -91,7 +90,6 @@ int main()
 //		sleep(10);
 //	}
 
-out:
 	cm11_close(handle);
 	signal(SIGINT, old_handler);
 	return 0;
