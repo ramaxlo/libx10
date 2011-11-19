@@ -24,8 +24,13 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <x10/x10proto.h>
 #include <x10/cm11.h>
+
+#define HELP_STR \
+	"cm11mon: X-10 bus monitor program\n\n" \
+	"Usage: cm11mon -d <serial device>\n" 
 
 typedef void (*sighandler_t)(int);
 sighandler_t old_handler;
@@ -130,9 +135,33 @@ void notify(cm11_handle *handle, s32 house, s32 device, u8 func, u8 value)
 	free(str);
 }
 
-int main()
+void usage()
 {
-	handle = cm11_init("/dev/ttyUSB0");
+	printf(HELP_STR);
+}
+
+int main(int argc, char *argv[])
+{
+	char *dev = "/dev/ttyUSB0";
+	char opt;
+
+	while ((opt = getopt(argc, argv, "d:h")) != -1)
+	{
+		switch (opt)
+		{
+			case 'd':
+				dev = optarg;
+				break;
+			case 'h':
+				usage();
+				return 0;
+			default:
+				usage();
+				return 1;
+		}
+	}
+
+	handle = cm11_init(dev);
 	if(handle == NULL)
 	{
 		printf("Can't init CM11\n"); 
