@@ -38,7 +38,7 @@ int wait_for_ack(int fd, unsigned char value)
 		return -1;
 	}
 
-	if(ack != value)
+	if (ack != value)
 	{
 		ERROR("Need: 0x%x Read: 0x%x\n", value, ack);
 		return -1;
@@ -60,7 +60,7 @@ int x10_detect_poll(int fd, u8 *code)
 	tv.tv_usec = 5 * 100000;
 
 	rc = select(fd + 1, &rset, NULL, NULL, &tv);
-	if(rc > 0)
+	if (rc > 0)
 		rc = read(fd, code, 1);
 
 	return rc;
@@ -77,16 +77,16 @@ int x10_read(int fd, struct read_buf *buf)
 	bzero(buf, sizeof(struct read_buf));
 	DBG("Now reading cmd...\n");
 	rc = x10_detect_poll(fd, &tmp);
-	if(rc < 0)
+	if (rc < 0)
 	{
 		ERROR("Poll error");
 		return -1;
 	}
-	else if(rc == 0)
+	else if (rc == 0)
 		/* Poll timeout, and nothing to read */
 		return 1;
 
-	if(tmp != SIG_POLL)
+	if (tmp != SIG_POLL)
 	{
 		ERROR("Not poll code: 0x%x", tmp);
 		return -1;
@@ -107,19 +107,22 @@ int x10_read(int fd, struct read_buf *buf)
 		return -1;
 	}
 
-	if(buf->sz > 9)
+	if (buf->sz > 9)
 	{
 		trash = buf->sz - 9;
 		buf->sz = 9;
 	}
-	if(buf->sz != 0) {
+	if (buf->sz != 0)
+	{
 		int tmp2 = buf->sz;
 		int total = 0;
 		int rc;
 
-		while (tmp2 > 0) {
+		while (tmp2 > 0)
+		{
 			rc = read(fd, (&buf->mask) + total, tmp2);
-			if (rc < 0) {
+			if (rc < 0)
+			{
 				ERROR("Read error");
 				return -1;
 			}
@@ -130,7 +133,7 @@ int x10_read(int fd, struct read_buf *buf)
 	}
 
 	/* Drop remaining bytes */
-	while(trash)
+	while (trash)
 	{
 		rc = read(fd, (char *)&i, 1);
 		trash--;
@@ -140,7 +143,7 @@ int x10_read(int fd, struct read_buf *buf)
 	DBG("\tsz: 0x%02x\n", buf->sz);
 	DBG("\tmask: 0x%02x\n", buf->mask);
 	p = &buf->data0;
-	for(i = 0; i < buf->sz - 1; i++)
+	for (i = 0; i < buf->sz - 1; i++)
 	{
 		DBG("\tdata%d: 0x%02x\n", i, *p);
 		p++;
@@ -169,7 +172,7 @@ unsigned char fun, unsigned char value)
 		if (rc < 0)
 			continue;
 
-		if(!wait_for_ack(fd, checksum))
+		if (!wait_for_ack(fd, checksum))
 			break;
 		DBG("Retry ...\n");
 	}
@@ -187,7 +190,7 @@ unsigned char fun, unsigned char value)
 		return -1;
 	}
 
-	if(wait_for_ack(fd, 0x55))
+	if (wait_for_ack(fd, 0x55))
 	{
 		ERROR("ACK error");	
 		return -1;
@@ -208,7 +211,7 @@ unsigned char fun, unsigned char value)
 		if (rc < 0)
 			continue;
 
-		if(!wait_for_ack(fd, checksum))
+		if (!wait_for_ack(fd, checksum))
 			break;
 		DBG("Retry ...\n");
 	}
@@ -226,7 +229,7 @@ unsigned char fun, unsigned char value)
 		return -1;
 	}
 
-	if(wait_for_ack(fd, 0x55))
+	if (wait_for_ack(fd, 0x55))
 	{
 		ERROR("ACK error");	
 		return -1;

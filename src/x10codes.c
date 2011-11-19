@@ -34,9 +34,9 @@ u8 code2idx(u8 code)
 	int i;
 	int rc = 0xff;
 
-	for(i = 0; i < sz; i++)
+	for (i = 0; i < sz; i++)
 	{
-		if(code == codes[i])
+		if (code == codes[i])
 			rc = i;
 	}
 
