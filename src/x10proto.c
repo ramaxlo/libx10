@@ -84,7 +84,7 @@ int x10_read(int fd, struct read_buf *buf)
 	}
 	else if(rc == 0)
 		/* Poll timeout, and nothing to read */
-		return -1;
+		return 1;
 
 	if(tmp != SIG_POLL)
 	{
