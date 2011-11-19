@@ -467,7 +467,7 @@ static int __update_state(u32 **p, int n, u8 func, u8 value)
 	return 0;
 }
 
-static void __parse_update(cm11_handle *handle, int dev, struct read_buf *buf, cm11_notify notify_fxn)
+static void __parse_update(cm11_handle *handle, struct read_buf *buf, cm11_notify notify_fxn)
 {
 	u32 mask;
 	u32 *ptrs[16] = {NULL};
@@ -476,18 +476,6 @@ static void __parse_update(cm11_handle *handle, int dev, struct read_buf *buf, c
 
 	mask = buf->mask;
 	p = &buf->data0;
-
-//	if(dev == DEV_NONE && handle->device != DEV_NONE)
-//	{
-//		dev = handle->device;
-//		ptrs[idx] = &STATE(handle, handle->house, dev);
-//		idx++;
-//	}
-//	else if(dev != DEV_NONE)
-//	{
-//		ptrs[idx] = &STATE(handle, handle->house, dev);
-//		idx++;
-//	}
 
 	while(mask)
 	{
@@ -545,7 +533,7 @@ int cm11_receive_notify(cm11_handle *handle, cm11_notify notify_fxn)
 
 	if((rc = x10_read(fd, &buf)))
 		goto out;
-	__parse_update(handle, DEV_NONE, &buf, notify_fxn);
+	__parse_update(handle, &buf, notify_fxn);
 
 out:
 	return rc;
@@ -559,7 +547,7 @@ int cm11_receive_cmd(cm11_handle *handle)
 
 	if((rc = x10_read(fd, &buf)))
 		goto out;
-	__parse_update(handle, DEV_NONE, &buf, NULL);
+	__parse_update(handle, &buf, NULL);
 
 out:
 	return rc;
@@ -580,7 +568,7 @@ int cm11_update_status(cm11_handle *handle, int dev)
 	x10_read(fd, &buf);
 
 	handle->device = dev;
-	__parse_update(handle, dev, &buf, NULL);
+	__parse_update(handle, &buf, NULL);
 
 	return 0;
 }
