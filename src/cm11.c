@@ -539,7 +539,7 @@ out:
 	return rc;
 }
 
-int cm11_receive_cmd(cm11_handle *handle)
+int cm11_receive(cm11_handle *handle)
 {
 	struct read_buf buf;
 	int fd = handle->fd;
