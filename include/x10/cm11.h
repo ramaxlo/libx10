@@ -94,8 +94,9 @@ int cm11_device_brightness(cm11_handle *handle, int id, int bright);
 int cm11_set_device_type(cm11_handle *handle, int id, int type);
 int cm11_ifce_status(cm11_handle *handle, cm11_status *status);
 int cm11_set_device_dir(struct cm11_handle *handle, int dev, int two_way);
-int cm11_receive_cmd(cm11_handle *handle);
+int cm11_receive(cm11_handle *handle);
 int cm11_receive_notify(cm11_handle *handle, cm11_notify notify_fxn);
+int cm11_set_house(cm11_handle *handle, int house);
 
 #endif   // CM11_H
 
